@@ -1,0 +1,36 @@
+<svg width="1200" height="900" viewBox="0 0 1200 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="900" rx="36" fill="#050915"/>
+  <ellipse cx="241" cy="760" rx="242" ry="172" fill="#5B8CFF" fill-opacity="0.18"/>
+  <ellipse cx="959" cy="149" rx="224" ry="160" fill="#4CC9F0" fill-opacity="0.15"/>
+  <ellipse cx="786" cy="722" rx="206" ry="146" fill="#8B5CF6" fill-opacity="0.2"/>
+  <rect x="96" y="96" width="1008" height="708" rx="34" fill="#07111E" stroke="#1B2F50" stroke-width="2"/>
+  <rect x="140" y="140" width="922" height="92" rx="24" fill="#0A1528" stroke="#1E3358"/>
+  <rect x="178" y="176" width="226" height="18" rx="9" fill="#4CC9F0" fill-opacity="0.7"/>
+  <rect x="892" y="172" width="128" height="24" rx="12" fill="#132240" stroke="#5B8CFF"/>
+  <rect x="140" y="270" width="438" height="490" rx="30" fill="#0A1528" stroke="#1E3358"/>
+  <rect x="622" y="270" width="440" height="490" rx="30" fill="#0A1528" stroke="#1E3358"/>
+  <circle cx="359" cy="512" r="132" fill="#091221" stroke="#253D67" stroke-width="2"/>
+  <circle cx="359" cy="512" r="90" fill="#4CC9F0" fill-opacity="0.12" stroke="#4CC9F0" stroke-width="2"/>
+  <circle cx="359" cy="512" r="48" fill="#8CF1FF" fill-opacity="0.18" stroke="#8CF1FF" stroke-width="2"/>
+  <path d="M359 380V644" stroke="#284A7B" stroke-dasharray="12 10"/>
+  <path d="M227 512H491" stroke="#284A7B" stroke-dasharray="12 10"/>
+  <path d="M359 512L432 454" stroke="#8CF1FF" stroke-width="5" stroke-linecap="round"/>
+  <circle cx="432" cy="454" r="9" fill="#8CF1FF"/>
+  <rect x="682" y="334" width="320" height="132" rx="24" fill="#101D36" stroke="#28406A"/>
+  <rect x="714" y="366" width="178" height="16" rx="8" fill="#8B5CF6" fill-opacity="0.72"/>
+  <rect x="714" y="406" width="242" height="12" rx="6" fill="#21375D"/>
+  <rect x="714" y="438" width="208" height="12" rx="6" fill="#21375D"/>
+  <rect x="682" y="494" width="320" height="202" rx="24" fill="#101D36" stroke="#28406A"/>
+  <path d="M728 640L786 586L850 612L944 536" stroke="url(#signal)" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="728" cy="640" r="8" fill="#8CF1FF"/>
+  <circle cx="786" cy="586" r="8" fill="#8CF1FF"/>
+  <circle cx="850" cy="612" r="8" fill="#8CF1FF"/>
+  <circle cx="944" cy="536" r="8" fill="#8CF1FF"/>
+  <defs>
+    <linearGradient id="signal" x1="728" y1="640" x2="944" y2="536" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4CC9F0"/>
+      <stop offset="0.55" stop-color="#5B8CFF"/>
+      <stop offset="1" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+</svg>
