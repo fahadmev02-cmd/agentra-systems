@@ -1,7 +1,7 @@
 "use client";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import { MessageCircle, Headphones, Phone, Target, Sparkles, X } from "lucide-react";
+import { CalendarDays, Headphones, MessageCircle, Phone, ShieldCheck, Sparkles, Target, X } from "lucide-react";
 import { useLiveSiteData } from "@/app/components/useLiveSiteData";
 
 const toneMap = {
@@ -31,29 +31,212 @@ const toneMap = {
   },
 };
 
-type DemoConversation = {
-  user: string;
-  agent: string;
+type DemoScenarioId = "sales" | "support" | "booking" | "qualification";
+
+type DemoMessage = {
+  speaker: "agent" | "user";
+  text: string;
 };
 
-function buildDemoConversation(title: string, primaryMessage: string, responseMessage: string): DemoConversation[] {
+type DemoOption = {
+  label: string;
+  userMessage: string;
+  agentReply: string;
+};
+
+type DemoStep = {
+  prompt: string;
+  options: DemoOption[];
+};
+
+type DemoScenario = {
+  id: DemoScenarioId;
+  title: string;
+  subtitle: string;
+  preview: string;
+  detail: string;
+  sourceLabel: string;
+  chips: string[];
+  tone: keyof typeof toneMap;
+  steps: DemoStep[];
+};
+
+function createDemoScenarios(categoryHint?: string) {
+  const category = categoryHint || "service business";
+
   return [
     {
-      user: `I want to see how the ${title.toLowerCase()} works for my business.`,
-      agent: responseMessage,
+      id: "sales",
+      title: "Sales Demo Agent",
+      subtitle: `Closes inbound ${category.toLowerCase()} leads with smart follow-up`,
+      preview: "Handles pricing questions, objections, and next-step nudges for new prospects.",
+      detail: "Built to convert cold or warm traffic into qualified conversations, callbacks, and booked sales opportunities.",
+      sourceLabel: "Interactive Sales Flow",
+      chips: ["Sales", "Pricing", "Objection Handling"],
+      tone: "blue",
+      steps: [
+        {
+          prompt: "Hi, I can help you compare plans, explain pricing, and qualify the best offer. What does your business need most right now?",
+          options: [
+            {
+              label: "I want more leads",
+              userMessage: "I want more leads coming in every week.",
+              agentReply: "Then I would position an inbound automation stack: instant lead reply, qualification, and follow-up sequences so your team only handles serious prospects.",
+            },
+            {
+              label: "How much does it cost?",
+              userMessage: "How much does an automation setup usually cost?",
+              agentReply: "We usually scope by workflow complexity, channels, and integrations. I would first qualify your lead volume and business type, then recommend the right range.",
+            },
+          ],
+        },
+        {
+          prompt: "I can narrow this down quickly. Which sales bottleneck hurts the most?",
+          options: [
+            {
+              label: "Slow replies",
+              userMessage: "My team replies too slowly and we lose leads.",
+              agentReply: "That is a strong fit for instant AI replies plus human escalation rules. It reduces response time and keeps hot leads warm automatically.",
+            },
+            {
+              label: "Weak follow-up",
+              userMessage: "We get leads, but the follow-up is inconsistent.",
+              agentReply: "Then the system should automate reminder sequences, qualification tags, and re-engagement so no serious lead gets dropped.",
+            },
+          ],
+        },
+      ],
     },
     {
-      user: "What will the AI actually handle for me?",
-      agent: primaryMessage,
+      id: "support",
+      title: "Support Demo Agent",
+      subtitle: "Answers common questions and routes complex requests cleanly",
+      preview: "Handles support conversations, FAQ coverage, and escalation to your human team.",
+      detail: "Built for brands that need 24/7 support coverage without making the experience feel robotic.",
+      sourceLabel: "Interactive Support Flow",
+      chips: ["Support", "FAQ", "Escalation"],
+      tone: "green",
+      steps: [
+        {
+          prompt: "Welcome back. I can help with account issues, pricing questions, and urgent support requests. What should I solve first?",
+          options: [
+            {
+              label: "Need an answer now",
+              userMessage: "I need an answer right now without waiting for the team.",
+              agentReply: "That is exactly where an FAQ and workflow agent helps. It can resolve repeated questions instantly and escalate edge cases with the full context attached.",
+            },
+            {
+              label: "Need human support",
+              userMessage: "I still want a human when it gets complicated.",
+              agentReply: "The agent can collect the issue, confirm urgency, and pass the ticket to your team only when human handling is actually needed.",
+            },
+          ],
+        },
+        {
+          prompt: "Which support metric would you improve first?",
+          options: [
+            {
+              label: "Reduce backlog",
+              userMessage: "I need to reduce backlog and ticket load.",
+              agentReply: "Then I would automate repetitive support intents first, because that removes the highest-volume requests from your manual queue.",
+            },
+            {
+              label: "Improve satisfaction",
+              userMessage: "I want faster and cleaner support replies.",
+              agentReply: "Then the best design is instant first-response AI, structured escalation, and message consistency across every channel.",
+            },
+          ],
+        },
+      ],
     },
     {
-      user: "What happens after a lead replies?",
-      agent: "The system qualifies the lead, captures contact details, tags the requirement, and routes the conversation into your workflow or admin pipeline.",
+      id: "booking",
+      title: "Booking Demo Agent",
+      subtitle: "Captures intent and books calls, demos, or appointments automatically",
+      preview: "Built for calendars, consultation funnels, and appointment-driven businesses.",
+      detail: "Designed to collect the right details before booking so your schedule stays reserved for qualified opportunities.",
+      sourceLabel: "Interactive Booking Flow",
+      chips: ["Booking", "Scheduling", "Reminders"],
+      tone: "cyan",
+      steps: [
+        {
+          prompt: "I can help book a demo, consultation, or appointment. Which experience do you want to automate?",
+          options: [
+            {
+              label: "Sales demos",
+              userMessage: "I want visitors to book sales demos directly.",
+              agentReply: "Then the agent should qualify budget, business type, and urgency before it exposes your calendar, so your team only speaks with serious prospects.",
+            },
+            {
+              label: "Client appointments",
+              userMessage: "I want clients to book appointments without manual back-and-forth.",
+              agentReply: "That flow works well with availability checks, reminders, and follow-up confirmation messages across web, voice, or WhatsApp.",
+            },
+          ],
+        },
+        {
+          prompt: "What causes the most booking friction today?",
+          options: [
+            {
+              label: "Too many no-shows",
+              userMessage: "No-shows are wasting our time.",
+              agentReply: "Then the workflow should include reminders, confirmation prompts, and rebooking nudges so time slots do not die silently.",
+            },
+            {
+              label: "Manual coordination",
+              userMessage: "My team spends too much time coordinating slots manually.",
+              agentReply: "Then the booking assistant should handle time selection, collect booking context, and sync the final appointment details automatically.",
+            },
+          ],
+        },
+      ],
     },
-  ];
+    {
+      id: "qualification",
+      title: "Qualification Demo Agent",
+      subtitle: `Screens ${category.toLowerCase()} inquiries before they hit your team`,
+      preview: "Captures contact details, intent, budget, and urgency before handoff.",
+      detail: "Ideal for businesses that want to stop wasting time on low-fit leads and route high-fit ones faster.",
+      sourceLabel: "Interactive Qualification Flow",
+      chips: ["Qualification", "Lead Scoring", "Routing"],
+      tone: "purple",
+      steps: [
+        {
+          prompt: "I can qualify the lead before your team gets involved. What is the first filter you care about most?",
+          options: [
+            {
+              label: "Budget fit",
+              userMessage: "I want to filter by budget first.",
+              agentReply: "Then the agent should ask spending range early, classify the lead automatically, and route high-fit prospects into the next step immediately.",
+            },
+            {
+              label: "Need urgency",
+              userMessage: "I want to know how urgent the lead is.",
+              agentReply: "That works well with a short urgency and timeline sequence so your team can prioritize ready-to-buy conversations first.",
+            },
+          ],
+        },
+        {
+          prompt: "What should happen after qualification is complete?",
+          options: [
+            {
+              label: "Route to sales",
+              userMessage: "Send qualified leads straight to sales.",
+              agentReply: "Then the workflow should pass the conversation summary, contact details, and qualification tags into your pipeline instantly.",
+            },
+            {
+              label: "Send nurture follow-up",
+              userMessage: "Keep lower-fit leads in a nurture sequence.",
+              agentReply: "Then the system should separate hot and warm prospects, start the right follow-up sequence, and keep your team focused on the strongest matches.",
+            },
+          ],
+        },
+      ],
+    },
+  ] satisfies DemoScenario[];
 }
 
-function LiveLeadCard({ card }: { card: ReturnType<typeof useLiveSiteData>["demoCards"][number] }) {
+function DemoScenarioCard({ card }: { card: DemoScenario }) {
   const shouldReduceMotion = useReducedMotion();
   const theme = toneMap[card.tone];
   const Icon = theme.icon;
@@ -78,21 +261,19 @@ function LiveLeadCard({ card }: { card: ReturnType<typeof useLiveSiteData>["demo
             </div>
           </div>
           <span className={`rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.2em] ${theme.bgColor} ${theme.color}`}>
-            {card.status}
+            Interactive
           </span>
         </div>
       </div>
 
       <div className="space-y-3 p-4">
-        <div className="flex justify-end">
-          <div className="max-w-[88%] rounded-2xl rounded-br-md bg-gradient-to-r from-brand-blue to-brand-purple px-4 py-3 text-sm text-white">
-            {card.primaryMessage}
-          </div>
-        </div>
         <div className="flex justify-start">
           <div className="max-w-[88%] rounded-2xl rounded-bl-md bg-white/5 px-4 py-3 text-sm text-slate-200">
-            {card.responseMessage}
+            {card.preview}
           </div>
+        </div>
+        <div className="rounded-2xl border border-white/5 bg-black/10 px-4 py-3 text-sm text-slate-400">
+          {card.detail}
         </div>
       </div>
 
@@ -104,7 +285,7 @@ function LiveLeadCard({ card }: { card: ReturnType<typeof useLiveSiteData>["demo
             </span>
           ))}
         </div>
-        <p className="mt-3 text-xs text-slate-400">{card.contact}</p>
+        <p className="mt-3 text-xs text-slate-400">Click to open the live-style demo conversation.</p>
       </div>
     </motion.div>
   );
@@ -114,16 +295,58 @@ function InteractiveDemoModal({
   card,
   onClose,
 }: {
-  card: ReturnType<typeof useLiveSiteData>["demoCards"][number];
+  card: DemoScenario;
   onClose: () => void;
 }) {
   const theme = toneMap[card.tone];
-  const conversation = useMemo(
-    () => buildDemoConversation(card.title, card.primaryMessage, card.responseMessage),
-    [card.primaryMessage, card.responseMessage, card.title],
-  );
+  const timeoutsRef = useRef<number[]>([]);
   const [step, setStep] = useState(0);
-  const activeConversation = conversation.slice(0, step + 1);
+  const [messages, setMessages] = useState<DemoMessage[]>([{ speaker: "agent", text: card.steps[0].prompt }]);
+  const [isTyping, setIsTyping] = useState(false);
+  const currentStep = card.steps[step];
+
+  useEffect(() => {
+    return () => {
+      timeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    };
+  }, []);
+
+  function restartDemo() {
+    timeoutsRef.current.forEach((timeoutId) => window.clearTimeout(timeoutId));
+    timeoutsRef.current = [];
+    setStep(0);
+    setIsTyping(false);
+    setMessages([{ speaker: "agent", text: card.steps[0].prompt }]);
+  }
+
+  function handleOptionSelect(option: DemoOption) {
+    if (!currentStep || isTyping) {
+      return;
+    }
+
+    setMessages((current) => [...current, { speaker: "user", text: option.userMessage }]);
+    setIsTyping(true);
+
+    const replyTimeout = window.setTimeout(() => {
+      setMessages((current) => [...current, { speaker: "agent", text: option.agentReply }]);
+
+      const nextStep = step + 1;
+      if (nextStep < card.steps.length) {
+        const promptTimeout = window.setTimeout(() => {
+          setMessages((current) => [...current, { speaker: "agent", text: card.steps[nextStep].prompt }]);
+          setStep(nextStep);
+          setIsTyping(false);
+        }, 650);
+        timeoutsRef.current.push(promptTimeout);
+        return;
+      }
+
+      setIsTyping(false);
+      setStep(nextStep);
+    }, 900);
+
+    timeoutsRef.current.push(replyTimeout);
+  }
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/80 px-4 backdrop-blur-sm">
@@ -132,7 +355,7 @@ function InteractiveDemoModal({
           <div>
             <p className={`text-xs uppercase tracking-[0.2em] ${theme.color}`}>Interactive Demo Agent</p>
             <h3 className="mt-2 text-2xl font-bold text-white">{card.title}</h3>
-            <p className="mt-2 text-sm text-slate-400">This is a clickable product demo. It is not a real lead record.</p>
+            <p className="mt-2 text-sm text-slate-400">This is a clickable simulation with selectable replies, typing states, and a dedicated workflow path.</p>
           </div>
           <button
             type="button"
@@ -150,45 +373,65 @@ function InteractiveDemoModal({
               Demo conversation
             </div>
             <div className="space-y-4">
-              {activeConversation.map((item, index) => (
-                <div key={`${item.user}-${index}`} className="space-y-3">
-                  <div className="flex justify-end">
-                    <div className="max-w-[88%] rounded-2xl rounded-br-md bg-gradient-to-r from-brand-blue to-brand-purple px-4 py-3 text-sm text-white">
-                      {item.user}
-                    </div>
-                  </div>
-                  <div className="flex justify-start">
-                    <div className="max-w-[88%] rounded-2xl rounded-bl-md bg-white/5 px-4 py-3 text-sm text-slate-200">
-                      {item.agent}
-                    </div>
+              {messages.map((message, index) => (
+                <div key={`${message.speaker}-${index}`} className={message.speaker === "user" ? "flex justify-end" : "flex justify-start"}>
+                  <div className={message.speaker === "user"
+                    ? "max-w-[88%] rounded-2xl rounded-br-md bg-gradient-to-r from-brand-blue to-brand-purple px-4 py-3 text-sm text-white"
+                    : "max-w-[88%] rounded-2xl rounded-bl-md bg-white/5 px-4 py-3 text-sm text-slate-200"}>
+                    {message.text}
                   </div>
                 </div>
               ))}
+              {isTyping ? (
+                <div className="flex justify-start">
+                  <div className="inline-flex items-center gap-2 rounded-2xl rounded-bl-md bg-white/5 px-4 py-3 text-sm text-slate-300">
+                    <span>Agent is typing</span>
+                    <span className="flex gap-1">
+                      <span className="h-2 w-2 animate-demo-typing rounded-full bg-slate-400 [animation-delay:0ms]" />
+                      <span className="h-2 w-2 animate-demo-typing rounded-full bg-slate-400 [animation-delay:180ms]" />
+                      <span className="h-2 w-2 animate-demo-typing rounded-full bg-slate-400 [animation-delay:360ms]" />
+                    </span>
+                  </div>
+                </div>
+              ) : null}
             </div>
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-6 space-y-3">
+              {currentStep ? (
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {currentStep.options.map((option) => (
+                    <button
+                      key={option.label}
+                      type="button"
+                      onClick={() => handleOptionSelect(option)}
+                      disabled={isTyping}
+                      className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-left text-sm font-medium text-slate-200 transition-all hover:border-cyan-300/30 hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm text-emerald-200">
+                  Demo flow complete. Restart it or open another agent to test a different conversation path.
+                </div>
+              )}
+              <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                onClick={() => setStep((current) => Math.min(conversation.length - 1, current + 1))}
-                disabled={step >= conversation.length - 1}
-                className="rounded-full bg-gradient-to-r from-brand-blue to-brand-purple px-5 py-3 text-sm font-semibold text-white transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Continue Demo
-              </button>
-              <button
-                type="button"
-                onClick={() => setStep(0)}
+                onClick={restartDemo}
                 className="rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-200 transition-colors hover:bg-white/10"
               >
                 Restart
               </button>
+              </div>
             </div>
           </div>
 
           <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-5">
             <p className="text-xs uppercase tracking-[0.2em] text-slate-500">What this demo shows</p>
             <div className="mt-4 space-y-4 text-sm text-slate-300">
-              <p>{card.primaryMessage}</p>
-              <p>{card.responseMessage}</p>
+              <p>{card.preview}</p>
+              <p>{card.detail}</p>
             </div>
             <div className="mt-6 flex flex-wrap gap-2">
               {card.chips.map((chip) => (
@@ -198,7 +441,7 @@ function InteractiveDemoModal({
               ))}
             </div>
             <div className="mt-6 rounded-2xl border border-cyan-300/10 bg-cyan-300/5 p-4 text-sm text-slate-300">
-              Click <span className="font-semibold text-white">Continue Demo</span> to see the agent reply in real time inside this modal.
+              Select one of the reply options to push the conversation forward. Each agent has its own sales, support, booking, or qualification path.
             </div>
           </div>
         </div>
@@ -208,9 +451,12 @@ function InteractiveDemoModal({
 }
 
 export default function DemoShowroom() {
-  const { demoCards } = useLiveSiteData();
-  const hasLiveCards = demoCards.some((card) => card.sourceLabel !== "Showcase Demo");
-  const [selectedCard, setSelectedCard] = useState<ReturnType<typeof useLiveSiteData>["demoCards"][number] | null>(null);
+  const { popularCategories } = useLiveSiteData();
+  const scenarioCards = useMemo(
+    () => createDemoScenarios(popularCategories[0]?.category),
+    [popularCategories],
+  );
+  const [selectedCard, setSelectedCard] = useState<DemoScenario | null>(null);
 
   return (
     <section id="demos" className="relative py-24 lg:py-32">
@@ -222,37 +468,29 @@ export default function DemoShowroom() {
           className="text-center mb-16"
         >
           <span className="inline-flex items-center gap-2 rounded-full border border-brand-blue/20 bg-brand-blue/5 px-4 py-1.5 text-xs uppercase tracking-[0.2em] text-brand-blue mb-6">
-            Live Lead Feed
+            Interactive Demo Agents
           </span>
           <h2 className="text-3xl font-bold sm:text-4xl md:text-5xl">
-            Demo Workflows. <span className="text-gradient">Live When Available.</span>
+            Choose A Demo. <span className="text-gradient">Test It Like A Buyer.</span>
           </h2>
           <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
-            {hasLiveCards
-              ? "This showcase prioritizes real captured workflows and fills any empty slots with polished demo scenarios."
-              : "This showcase is currently displaying polished demo scenarios until more qualified live records are available."}
+            These are real interactive product demos with selectable replies, simulated typing, and separate conversation flows for sales, support, booking, and lead qualification.
           </p>
           <p className="mt-3 text-sm text-slate-500 max-w-2xl mx-auto">
-            Click any card below to open an interactive demo agent.
+            Click any card below to open the agent and drive the conversation yourself.
           </p>
         </motion.div>
         <div className="grid gap-6 md:grid-cols-2">
-          {demoCards.length > 0 ? (
-            demoCards.map((card) => (
+          {scenarioCards.map((card) => (
               <button
                 key={card.id}
                 type="button"
                 onClick={() => setSelectedCard(card)}
                 className="text-left transition-transform hover:scale-[1.01]"
               >
-                <LiveLeadCard card={card} />
+                <DemoScenarioCard card={card} />
               </button>
-            ))
-          ) : (
-            <div className="rounded-3xl border border-white/10 bg-white/[0.04] p-8 text-center text-slate-400 md:col-span-2">
-              As soon as new inquiries or voice sessions are captured, this feed will populate automatically.
-            </div>
-          )}
+            ))}
         </div>
       </div>
       {selectedCard ? <InteractiveDemoModal card={selectedCard} onClose={() => setSelectedCard(null)} /> : null}

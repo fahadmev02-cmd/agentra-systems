@@ -86,6 +86,19 @@ html {
   }
 }
 
+@keyframes demoTyping {
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.35;
+  }
+  40% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+
 body {
   background: #060816;
   color: #f8fafc;
@@ -232,6 +245,10 @@ body {
 
   .animate-float {
     animation: floatSlow 8s ease-in-out infinite;
+  }
+
+  .animate-demo-typing {
+    animation: demoTyping 1s ease-in-out infinite;
   }
 
   .halo-ring {

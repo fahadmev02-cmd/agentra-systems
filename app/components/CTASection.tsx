@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   ArrowRight,
@@ -31,6 +31,11 @@ export default function CTASection() {
   const [callError, setCallError] = useState("");
   const [callSuccess, setCallSuccess] = useState("");
   const [isStartingCall, setIsStartingCall] = useState(false);
+  const [isVercelHosted, setIsVercelHosted] = useState(false);
+
+  useEffect(() => {
+    setIsVercelHosted(window.location.hostname.endsWith("vercel.app"));
+  }, []);
 
   const readJsonSafely = async <T,>(response: Response) => {
     const text = await response.text();
@@ -116,6 +121,14 @@ export default function CTASection() {
     e.preventDefault();
     setCallError("");
     setCallSuccess("");
+
+    if (isVercelHosted) {
+      setCallError(
+        "Live AI calling is in showcase mode on this Vercel site. Move the app to a VPS or database-backed deployment to enable real outbound calls.",
+      );
+      return;
+    }
+
     setIsStartingCall(true);
 
     try {
@@ -465,7 +478,9 @@ export default function CTASection() {
                 </div>
 
                 {callError && (
-                  <p className="rounded-2xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+                  <p className={`rounded-2xl px-4 py-3 text-sm ${callError.includes("showcase mode") || callError.includes("disabled on this Vercel deployment")
+                    ? "border border-amber-400/20 bg-amber-400/10 text-amber-200"
+                    : "border border-red-500/20 bg-red-500/10 text-red-300"}`}>
                     {callError}
                   </p>
                 )}
@@ -479,7 +494,7 @@ export default function CTASection() {
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <button
                     type="submit"
-                    disabled={isStartingCall}
+                    disabled={isStartingCall || isVercelHosted}
                     className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-brand-blue to-brand-purple px-5 py-3 font-semibold text-white transition-transform hover:scale-[1.01] disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     {isStartingCall ? (
@@ -487,8 +502,19 @@ export default function CTASection() {
                     ) : (
                       <Phone className="h-4 w-4" />
                     )}
-                    Trigger AI Call
+                    {isVercelHosted ? "Live Call Needs VPS" : "Trigger AI Call"}
                   </button>
+                  {isVercelHosted ? (
+                    <a
+                      href="https://wa.me/1234567890?text=I%20want%20to%20book%20an%20AI%20strategy%20call"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-2xl border border-cyan-300/15 bg-white/5 px-5 py-3 font-semibold text-slate-200 transition-colors hover:bg-white/10"
+                    >
+                      <MessageCircle className="h-4 w-4" />
+                      Use WhatsApp Instead
+                    </a>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => setShowInstantCallForm(false)}
