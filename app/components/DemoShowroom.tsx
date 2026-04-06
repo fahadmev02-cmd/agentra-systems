@@ -88,6 +88,7 @@ function LiveLeadCard({ card }: { card: ReturnType<typeof useLiveSiteData>["demo
 
 export default function DemoShowroom() {
   const { demoCards } = useLiveSiteData();
+  const hasLiveCards = demoCards.some((card) => card.sourceLabel !== "Showcase Demo");
 
   return (
     <section id="demos" className="relative py-24 lg:py-32">
@@ -102,11 +103,12 @@ export default function DemoShowroom() {
             Live Lead Feed
           </span>
           <h2 className="text-3xl font-bold sm:text-4xl md:text-5xl">
-            Real Captured Leads. <span className="text-gradient">Live Pipeline View.</span>
+            Demo Workflows. <span className="text-gradient">Live When Available.</span>
           </h2>
           <p className="mt-4 text-lg text-slate-400 max-w-2xl mx-auto">
-            These cards now render from saved website inquiries, voice sessions,
-            and qualified lead exports instead of fixed demo copy.
+            {hasLiveCards
+              ? "This showcase prioritizes real captured workflows and fills any empty slots with polished demo scenarios."
+              : "This showcase is currently displaying polished demo scenarios until more qualified live records are available."}
           </p>
         </motion.div>
         <div className="grid gap-6 md:grid-cols-2">

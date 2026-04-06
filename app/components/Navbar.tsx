@@ -6,11 +6,11 @@ import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { Menu, X, Zap } from "lucide-react";
 
 const navLinks = [
+  { href: "/", label: "Home" },
   { href: "/demos", label: "Demos" },
   { href: "/services", label: "Services" },
   { href: "/use-cases", label: "Use Cases" },
   { href: "/contact", label: "Contact" },
-  { href: "/", label: "Home" },
 ];
 
 export default function Navbar() {

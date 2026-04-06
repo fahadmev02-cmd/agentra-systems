@@ -107,6 +107,38 @@ export interface SiteDashboardData {
   }>;
 }
 
+function isUsefulDemoRecord(record: UnifiedLeadRecord) {
+  const hasSpecificBusiness = record.businessType !== "Unspecified business";
+  const hasContact = record.phoneNumber !== "No phone number" || record.email !== "No email";
+  const hasSpecificRequirement = !record.requirement.includes("Requested automation guidance for unspecified business");
+  const hasSpecificSummary = !record.summary.includes("did not complete");
+
+  return hasSpecificBusiness && hasContact && (hasSpecificRequirement || hasSpecificSummary);
+}
+
+function buildFallbackDemoCards(popularCategories: Array<{ category: string; count: number }>, metrics: SiteMetricSnapshot) {
+  const categories = popularCategories.length > 0
+    ? popularCategories.map((item) => item.category)
+    : ["Lead Qualification", "Voice Follow-Up", "Appointment Booking", "Support Automation"];
+
+  return categories.slice(0, 4).map((category, index) => {
+    const profile = buildCategoryProfile(category);
+
+    return {
+      id: `showcase-${category.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+      title: `${category} demo workflow`,
+      subtitle: "Public showcase generated from your active automation offers",
+      sourceLabel: "Showcase Demo",
+      status: metrics.totalLeadsCaptured > 0 ? "live" : "ready",
+      contact: "Configured for website, voice, and admin follow-up",
+      primaryMessage: profile.description,
+      responseMessage: `${profile.serviceItems[0]}. ${profile.serviceItems[1]}. ${profile.metrics[0]}.`,
+      chips: [category, profile.metrics[0], profile.metrics[1] ?? "Always-on automation"],
+      tone: getTone(index),
+    } satisfies LiveDemoCard;
+  });
+}
+
 function buildCategoryProfile(category: string) {
   const normalized = category.toLowerCase();
 
@@ -385,12 +417,10 @@ export async function getSiteDashboardData(): Promise<SiteDashboardData> {
     lastUpdated: recentLeads[0]?.updatedAt ?? new Date().toISOString(),
   };
 
-  const demoCards: LiveDemoCard[] = recentLeads.slice(0, 4).map((record, index) => ({
+  const curatedRecords = recentLeads.filter(isUsefulDemoRecord);
+  const liveDemoCards: LiveDemoCard[] = curatedRecords.slice(0, 4).map((record, index) => ({
     id: record.id,
-    title:
-      record.businessType !== "Unspecified business"
-        ? `${record.businessType} workflow`
-        : `${record.sourceLabel} pipeline`,
+    title: `${record.businessType} workflow`,
     subtitle: `${record.sourceLabel} from ${record.name}`,
     sourceLabel: record.sourceLabel,
     status: record.status,
@@ -402,6 +432,20 @@ export async function getSiteDashboardData(): Promise<SiteDashboardData> {
     chips: [record.businessType, record.status, record.budget].filter(Boolean),
     tone: getTone(index),
   }));
+
+  const fallbackDemoCards = buildFallbackDemoCards(popularCategories, metrics);
+  const demoCards: LiveDemoCard[] = [...liveDemoCards];
+
+  for (const card of fallbackDemoCards) {
+    if (demoCards.length >= 4) {
+      break;
+    }
+
+    demoCards.push({
+      ...card,
+      tone: getTone(demoCards.length),
+    });
+  }
 
   const featuredBusiness = featuredBusinessTypes[0] ?? "AI automation";
   const categoryProfile = buildCategoryProfile(featuredBusiness);
