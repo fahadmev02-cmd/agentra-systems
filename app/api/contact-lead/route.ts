@@ -1,17 +1,42 @@
 import { NextResponse } from "next/server";
 import { appendWebsiteInquiry } from "@/lib/website-inquiry-workbook";
 import { sanitizePhoneNumber } from "@/lib/voice-agent-config";
+import { getPersistentStorageError, isEphemeralDeployment } from "@/lib/deployment-mode";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
-  const payload = (await request.json()) as {
+  if (isEphemeralDeployment()) {
+    return NextResponse.json(
+      {
+        error: getPersistentStorageError("Website lead capture"),
+      },
+      { status: 503 },
+    );
+  }
+
+  let payload: {
     name?: string;
     businessType?: string;
     email?: string;
     phoneNumber?: string;
     requirement?: string;
   };
+
+  try {
+    payload = (await request.json()) as {
+      name?: string;
+      businessType?: string;
+      email?: string;
+      phoneNumber?: string;
+      requirement?: string;
+    };
+  } catch {
+    return NextResponse.json(
+      { error: "Could not read the inquiry payload." },
+      { status: 400 },
+    );
+  }
 
   const name = payload.name?.trim() || "";
   const businessType = payload.businessType?.trim() || "";
@@ -45,15 +70,24 @@ export async function POST(request: Request) {
     );
   }
 
-  await appendWebsiteInquiry({
-    name,
-    businessType,
-    email,
-    mobileNumber: phoneNumber,
-    requirement: requirement || "Not provided",
-    source: "CTA form",
-    createdAt: new Date().toISOString(),
-  });
+  try {
+    await appendWebsiteInquiry({
+      name,
+      businessType,
+      email,
+      mobileNumber: phoneNumber,
+      requirement: requirement || "Not provided",
+      source: "CTA form",
+      createdAt: new Date().toISOString(),
+    });
+  } catch {
+    return NextResponse.json(
+      {
+        error: "Could not save your details right now.",
+      },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({
     message: "Your details have been captured. We will reach out with the next steps shortly.",

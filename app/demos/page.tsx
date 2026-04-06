@@ -1,3 +1,5 @@
+import AIPlayground from "@/app/components/AIPlayground";
+import BotBuilder from "@/app/components/BotBuilder";
 import DemoShowroom from "@/app/components/DemoShowroom";
 import CTASection from "@/app/components/CTASection";
 import MarketingShell from "@/app/components/MarketingShell";
@@ -8,9 +10,11 @@ export default function DemosPage() {
     <MarketingShell>
       <PageIntro
         eyebrow="Live Demos"
-        title="See live captured leads and AI workflow activity"
-        description="This page shows the live lead feed, recent pipeline records, and the AI workflows already being captured through your website and voice system."
+        title="Try interactive AI demos and review workflow activity"
+        description="This page combines clickable demo agents with your live workflow showcase, so visitors can test responses in real time before they book a strategy call."
       />
+      <AIPlayground />
+      <BotBuilder />
       <DemoShowroom />
       <CTASection />
     </MarketingShell>

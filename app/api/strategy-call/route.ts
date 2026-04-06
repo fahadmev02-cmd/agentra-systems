@@ -9,10 +9,20 @@ import {
   type LeadSession,
 } from "@/lib/voice-agent-config";
 import { createLeadSession, updateLeadSession } from "@/lib/voice-session-store";
+import { getPersistentStorageError, isEphemeralDeployment } from "@/lib/deployment-mode";
 
 export const runtime = "nodejs";
 
 export async function POST(request: Request) {
+  if (isEphemeralDeployment()) {
+    return NextResponse.json(
+      {
+        error: getPersistentStorageError("Instant AI calls"),
+      },
+      { status: 503 },
+    );
+  }
+
   const missingEnvVars = getMissingVoiceEnvVars();
   if (missingEnvVars.length > 0) {
     return NextResponse.json(
@@ -33,10 +43,24 @@ export async function POST(request: Request) {
     );
   }
 
-  const payload = (await request.json()) as {
+  let payload: {
     name?: string;
     phoneNumber?: string;
   };
+
+  try {
+    payload = (await request.json()) as {
+      name?: string;
+      phoneNumber?: string;
+    };
+  } catch {
+    return NextResponse.json(
+      {
+        error: "Could not read the call request payload.",
+      },
+      { status: 400 },
+    );
+  }
 
   const phoneNumber = sanitizePhoneNumber(payload.phoneNumber || "");
   const name = payload.name?.trim() || "";
@@ -62,15 +86,15 @@ export async function POST(request: Request) {
     transcript: [],
   };
 
-  await createLeadSession(session);
-
-  const client = twilio(
-    process.env.TWILIO_ACCOUNT_SID,
-    process.env.TWILIO_AUTH_TOKEN,
-  );
-  const baseUrl = getAppBaseUrl();
-
   try {
+    await createLeadSession(session);
+
+    const client = twilio(
+      process.env.TWILIO_ACCOUNT_SID,
+      process.env.TWILIO_AUTH_TOKEN,
+    );
+    const baseUrl = getAppBaseUrl();
+
     const call = await client.calls.create({
       to: phoneNumber,
       from: process.env.TWILIO_PHONE_NUMBER!,
@@ -91,7 +115,7 @@ export async function POST(request: Request) {
       callSid: call.sid,
     });
   } catch (error) {
-    await updateLeadSession(sessionId, { status: "failed" });
+    await updateLeadSession(sessionId, { status: "failed" }).catch(() => null);
 
     return NextResponse.json(
       {

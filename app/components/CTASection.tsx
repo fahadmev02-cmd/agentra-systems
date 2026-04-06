@@ -32,6 +32,20 @@ export default function CTASection() {
   const [callSuccess, setCallSuccess] = useState("");
   const [isStartingCall, setIsStartingCall] = useState(false);
 
+  const readJsonSafely = async <T,>(response: Response) => {
+    const text = await response.text();
+
+    if (!text) {
+      return null as T | null;
+    }
+
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      return null as T | null;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError("");
@@ -46,12 +60,12 @@ export default function CTASection() {
         body: JSON.stringify(leadForm),
       });
 
-      const result = (await response.json()) as {
+      const result = await readJsonSafely<{
         error?: string;
-      };
+      }>(response);
 
       if (!response.ok) {
-        throw new Error(result.error || "Could not submit your details.");
+        throw new Error(result?.error || "Could not submit your details.");
       }
 
       setSubmitted(true);
@@ -116,17 +130,17 @@ export default function CTASection() {
         }),
       });
 
-      const result = (await response.json()) as {
+      const result = await readJsonSafely<{
         error?: string;
         message?: string;
-      };
+      }>(response);
 
       if (!response.ok) {
-        throw new Error(result.error || "Could not start the AI call.");
+        throw new Error(result?.error || "Could not start the AI call.");
       }
 
       setCallSuccess(
-        result.message ||
+        result?.message ||
           "The AI assistant is calling now. Keep your phone nearby.",
       );
       setPhoneNumber("");
